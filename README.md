@@ -1,66 +1,222 @@
-# Leo
-Leo 是一个基于 [go-kit](https://github.com/go-kit/kit) 的微服务工具，简化了基于go-kit开发的繁琐的工作。
+# gorilla
+gorilla 参考 Google API 设计方案，通过定义 proto 文件，快速生成Go语言的Restful服务路由。
 
-Leo 提供一些列 proto 插件，可以生成基于 go-kit 的 HTTP 和 gRPC 的代码。
+# 路由规则
+gorilla 底层基于 [gorilla/mux](http://github.com/gorilla/mux) 管理http路由。详细定义规则见[gorilla/mux](https://github.com/gorilla/mux)
 
-# Leo 的优点
-* 模块化：基于 Go-kit, 设计时考虑了模块化，允许开发人员根据具体的使用情况选择所需的组件。
-* 传输协议无关：它支持多种传输协议（HTTP、gRPC 等），使其在不同的通信需求中具有灵活性。
-* 服务发现：Leo 和 Go-kit 提供了内置的服务发现支持，这对于微服务架构至关重要。
-* 负载均衡：包含负载均衡机制，以便在多个服务实例之间分配请求。
-* 框架本身和业务代码保持一种低耦合的状态
-* 中间件支持：一套通用的`middleware`，使之与`HTTP`和`gRPC`等传输协议无关
-* 仪表化：它与监控和日志记录工具集成良好，提供对服务性能和健康状况的可见性。
-* 标准化：推广最佳实践和标准化，使得维护和扩展微服务变得更容易。
+# 优点
+1. 基于proto文件，快速生成Restful服务路由
+2. 零配置
+3. 低依赖
+4. 非反射取值，效率非常高
+5. 稳定，所有方法经过单元测试
+6. 代码简单，良好的代码设计，减少出错
 
-# 功能组件
-* [code generator](docs/generator.md)
-  * 生成gRPC、Http、config、status代码。
-  * 生成一套符合微服务和DDD思想的代码结构。
-* [服务发现](docs/sd.md)
-  * 扩展go-kit的服务发现功能，支持多种注册中心(consul、nacos)
-* [流量染色](docs/stain.md)
-  * 支持流量染色
-* [限流](docs/ratelimit.md)
-  * SlideWindow 滑动窗口限流
-  * LeakyBucket 漏桶限流
-  * TokenBucket 令牌桶限流
-  * Redis Redis分布式限流
-  * BBR 基于BBR的限流
-* [熔断](docs/circuitbreaker.md)
-  * google sre 熔断算法
-  * hystrix 熔断器
-  * sony go breaker
-* [负载均衡](docs/loadbalance.md)
-  * 扩展go-kit的负载均衡功能，支持多种负载均衡算法(随机、轮询、一致性哈希)
-* [超时](docs/timeout.md)
-  * 除了gRPC天然支持超时，HTTP也支持同样支持
-* [重试](docs/retry.md)
-  * 支持客户端失败重试。
-* [配置](docs/config.md)
-  * 支持从多种配置源(consul、nacos、环境变量、文件)获取配置
-  * 支持监听配置变化，支持配置热加载
-  * protobuf 定义配置格式，严格控制配置格式
-* [状态](docs/status.md)
-  * 基于 googleapi 错误规范实现，使用简单的协议无关错误模型，这使我们能够在不同的API，API协议（如gRPC或HTTP）以及错误上下文（例如，异步，批处理或工作流错误）中获得一致的体验。
-* [元数据](docs/metadata.md)
-  * Leo提供了一个元数据支持，支持跨通信方式传递元数据。
-* [健康检查](docs/health.md)
-  * gRPC和HTTP都支持健康检查
-  * 支持自定义其他系统（比如redis、mysql等）的健康检查
-* [日志](docs/log.md)
-  * go-kit 的日志功能
-* [监控](docs/opentelemetry.md)
-  * 使用 OpenTelemetry 提供的监控方案
-* [链路追踪](docs/opentelemetry.md)
-  * 使用 OpenTelemetry 提供的链路追踪方案
-* [参数校验](docs/validator.md)
-  * 支持请求参数的自动校验(github.com/envoyproxy/protoc-gen-validate)
-  * 避免手动检查代码
-  * 支持自定义校验器
-* [Panic恢复](docs/recovery.md)
-  * 避免程序崩溃
-* [JWT Auth](docs/jwt.md)
-* [Basic Auth](docs/basic.md)
-* [中间件](docs/middleware.md)
-  * 除了内置限流、校验、日志、监控等中间件，go-kit的所有中间件都支持
+# 安装
+```
+go install github.com/go-leo/goose/cmd/protoc-gen-gorilla@latest
+```
+
+# Example
+```protobuf
+syntax = "proto3";
+package leo.gorilla.example.user.v1;
+option go_package = "github.com/go-leo/goose/example/user/v1;user";
+
+import "google/api/annotations.proto";
+
+service User {
+
+  // CreateUser 创建用户
+  // `POST /v1/user { "name": "Leo" }` | `CreateUserRequest(name: "Leo")`
+  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post : "/v1/user"
+      body : "*"
+    };
+  }
+
+  // DeleteUser 删除用户
+    // `DELETE /v1/user/10000 | `DeleteUserRequest(id: 10000)`
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse) {
+    option (google.api.http) = {
+      delete : "/v1/user/{id}"
+    };
+  }
+
+  // ModifyUser 修改用户
+  // `PUT /v1/user/10000 { "name": "Leo" }` | `ModifyUserRequest(id: 10000, name: "Leo")`
+  rpc ModifyUser (ModifyUserRequest) returns (ModifyUserResponse) {
+    option (google.api.http) = {
+      put : "/v1/user/{id}"
+      body : "*"
+    };
+  }
+
+  // UpdateUser 更新用户
+  // `PUT /v1/user/10000 { "id": "99999" ,"name": "Leo" }` | `UpdateUserRequest(id: 10000, UserItem(id: 9999, name: "Leo"))`
+  rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse) {
+    option (google.api.http) = {
+      patch : "/v1/user/{id}"
+      body : "item"
+    };
+  }
+
+  // GetUser 获取用户
+  // `GET /v1/user/10000` | `GetUserRequest(id: 10000)`
+  rpc GetUser (GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get : "/v1/user/{id}"
+    };
+  }
+
+  // ListUser 获取用户列表
+  // `GET /v1/users?page_num=1&page_size=10` | `ListUserRequest(page_num: 1, page_size: 10)`
+  rpc ListUser (ListUserRequest) returns (ListUserResponse) {
+    option (google.api.http) = {
+      get : "/v1/users"
+    };
+  }
+}
+
+message UserItem {
+  int64 id = 1;
+  string name = 2;
+}
+
+message CreateUserRequest {
+  string name = 1;
+}
+
+message CreateUserResponse {
+  UserItem item = 1;
+}
+
+message DeleteUserRequest {
+  int64 id = 1;
+}
+
+message DeleteUserResponse {
+  int64 id = 1;
+}
+
+message ModifyUserRequest {
+  int64 id = 1;
+  string name = 2;
+}
+
+message ModifyUserResponse {
+    int64 id = 1;
+  string name = 2;
+}
+
+message UpdateUserRequest {
+  int64 id = 1;
+  UserItem item = 2;
+}
+
+message UpdateUserResponse {
+  int64 id = 1;
+  UserItem item = 2;
+}
+
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message GetUserResponse {
+  UserItem item = 1;
+}
+
+message ListUserRequest {
+  int64 page_num = 1;
+  int64 page_size = 2;
+}
+
+message ListUserResponse {
+  int64 page_num = 1;
+  int64 page_size = 2;
+  repeated UserItem list = 3;
+}
+```
+定义了6个接口：分别是
+1. 创建用户，POST请求
+2. 删除用户，DELETE请求
+3. 修改用户，PUT请求
+4. 更新用户，PATCH请求
+5. 获取用户, GET请求
+6. 获取用户列表, GET请求
+
+# 生成路由
+执行命令
+```
+protoc \
+--proto_path=. \
+--proto_path=../third_party \
+--proto_path=../../ \
+--go_out=. \
+--go_opt=paths=source_relative \
+--gorilla_out=. \
+--gorilla_opt=paths=source_relative \
+user/user.proto
+```
+生成一下文件
+```
+user
+├── user_gorilla.pb.go
+├── user_test.go
+├── user.pb.go
+└── user.proto
+```
+
+# 实现UserService代码：
+```go
+
+type MockUserService struct{}
+
+func (m *MockUserService) CreateUser(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
+	return &CreateUserResponse{Item: &UserItem{Id: 1, Name: req.Name}}, nil
+}
+
+func (m *MockUserService) DeleteUser(ctx context.Context, req *DeleteUserRequest) (*DeleteUserResponse, error) {
+	return &DeleteUserResponse{Id: req.GetId()}, nil
+}
+
+func (m *MockUserService) ModifyUser(ctx context.Context, req *ModifyUserRequest) (*ModifyUserResponse, error) {
+	return &ModifyUserResponse{Id: req.GetId(), Name: req.GetName()}, nil
+}
+
+func (m *MockUserService) UpdateUser(ctx context.Context, req *UpdateUserRequest) (*UpdateUserResponse, error) {
+	return &UpdateUserResponse{Id: req.GetId(), Item: &UserItem{Id: req.GetItem().GetId(), Name: req.GetItem().GetName()}}, nil
+}
+
+func (m *MockUserService) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
+	return &GetUserResponse{Item: &UserItem{Id: req.Id, Name: "test"}}, nil
+}
+
+func (m *MockUserService) ListUser(ctx context.Context, req *ListUserRequest) (*ListUserResponse, error) {
+	return &ListUserResponse{
+		PageNum:  req.GetPageNum(),
+		PageSize: req.GetPageSize(),
+		List: []*UserItem{
+			{Id: 1, Name: "a"},
+			{Id: 2, Name: "b"},
+		},
+	}, nil
+}
+```
+
+# 创建Server
+```go
+func main() {
+	router := mux.NewRouter()
+	router = AppendUserGorillaRoute(router, &MockUserService{})
+	server := http.Server{Addr: ":8000", Handler: router}
+	server.ListenAndServe()
+}
+```
+
+更多示例见 [example]https://github.com/go-leo/goose/tree/example/user/server
+
+# 子妹项目
+[github.com/go-leo/gonic](https://github.com/go-leo/gonic) 使用 gin-gonic/gin 管理路由。

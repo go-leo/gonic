@@ -1,10 +1,14 @@
 module github.com/go-leo/goose
 
-go 1.20
+go 1.22
 
 require (
+	github.com/gorilla/mux v1.8.1
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
-	google.golang.org/genproto/googleapis/api v0.0.0-20240812133136-8ffd90a71988
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240812133136-8ffd90a71988
-	google.golang.org/protobuf v1.34.2
+	golang.org/x/net v0.35.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a
+	google.golang.org/protobuf v1.36.6
 )
+
+require golang.org/x/text v0.22.0 // indirect
