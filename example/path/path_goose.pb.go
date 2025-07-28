@@ -639,7 +639,7 @@ func AppendStringPathGooseRoute(router *http.ServeMux, service StringPathGooseSe
 		},
 		errorEncoder: goose.DefaultEncodeError,
 	}
-	router.Handle("GET /v1/{string}/{opt_string}/{wrap_string}", goose.Chain(handler.StringPath(), options.Middlewares()...))
+	router.Handle("GET /v1/{string}/{opt_string}/{wrap_string}/{multi_string...}", goose.Chain(handler.StringPath(), options.Middlewares()...))
 	return router
 }
 
@@ -683,11 +683,12 @@ func (decoder stringPathGooseRequestDecoder) StringPath(ctx context.Context, r *
 	} else if ok && err == nil {
 		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
 	}
-	vars := goose.FormFromPath(r, "string", "opt_string", "wrap_string")
+	vars := goose.FormFromPath(r, "string", "opt_string", "wrap_string", "multi_string")
 	var varErr error
 	req.String_ = vars.Get("string")
 	req.OptString = proto.String(vars.Get("opt_string"))
 	req.WrapString = wrapperspb.String(vars.Get("wrap_string"))
+	req.MultiString = vars.Get("multi_string")
 	if varErr != nil {
 		return nil, varErr
 	}

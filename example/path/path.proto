@@ -121,7 +121,7 @@ message DoublePathRequest {
 service StringPath {
   rpc StringPath(StringPathRequest) returns (google.api.HttpBody) {
     option (google.api.http) = {
-      get : "/v1/{string}/{opt_string}/{wrap_string}"
+      get : "/v1/{string}/{opt_string}/{wrap_string}/{multi_string...}"
     };
   }
 }
@@ -130,7 +130,9 @@ message StringPathRequest {
   string string = 1;
   optional string opt_string = 2;
   google.protobuf.StringValue wrap_string = 3;
+  string multi_string = 4;
 }
+
 service EnumPath {
   rpc EnumPath(EnumPathRequest) returns (google.api.HttpBody) {
     option (google.api.http) = {

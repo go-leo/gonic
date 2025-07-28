@@ -266,7 +266,7 @@ func TestStringPath(t *testing.T) {
 	server := httptest.NewServer(router)
 	defer server.Close()
 
-	url := server.URL + "/v1/abc/def/ghi"
+	url := server.URL + "/v1/abc/def/ghi/opq/rst/uv"
 	resp, err := http.Get(url)
 	if err != nil {
 		t.Fatal(err)
@@ -276,7 +276,7 @@ func TestStringPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := `{"string":"abc","optString":"def","wrapString":"ghi"}`
+	expected := `{"string":"abc","optString":"def","wrapString":"ghi","multiString":"opq/rst/uv"}`
 	if strings.ReplaceAll(string(body), " ", "") != strings.ReplaceAll(expected, " ", "") {
 		t.Fatalf("body is not equal: got %s, want %s", string(body), expected)
 	}
