@@ -26,16 +26,16 @@ func AppendBodyGooseRoute(router *http1.ServeMux, service BodyGooseService, opts
 	handler := bodyGooseHandler{
 		service: service,
 		decoder: bodyGooseRequestDecoder{
-			unmarshalOptions:        options.UnmarshalOptions(),
-			shouldFailFast:          options.ShouldFailFast(),
-			onValidationErrCallback: options.OnValidationErrCallback(),
+			unmarshalOptions: options.UnmarshalOptions(),
 		},
 		encoder: bodyGooseEncodeResponse{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
 		},
-		errorEncoder: goose.DefaultEncodeError,
+		errorEncoder:            goose.DefaultEncodeError,
+		shouldFailFast:          options.ShouldFailFast(),
+		onValidationErrCallback: options.OnValidationErrCallback(),
 	}
 	router.Handle("POST /v1/star/body", goose.Chain(handler.StarBody(), options.Middlewares()...))
 	router.Handle("POST /v1/named/body", goose.Chain(handler.NamedBody(), options.Middlewares()...))
@@ -47,10 +47,12 @@ func AppendBodyGooseRoute(router *http1.ServeMux, service BodyGooseService, opts
 }
 
 type bodyGooseHandler struct {
-	service      BodyGooseService
-	decoder      bodyGooseRequestDecoder
-	encoder      bodyGooseEncodeResponse
-	errorEncoder goose.ErrorEncoder
+	service                 BodyGooseService
+	decoder                 bodyGooseRequestDecoder
+	encoder                 bodyGooseEncodeResponse
+	errorEncoder            goose.ErrorEncoder
+	shouldFailFast          bool
+	onValidationErrCallback goose.OnValidationErrCallback
 }
 
 func (h bodyGooseHandler) StarBody() http1.Handler {
@@ -58,6 +60,10 @@ func (h bodyGooseHandler) StarBody() http1.Handler {
 		ctx := request.Context()
 		in, err := h.decoder.StarBody(ctx, request)
 		if err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
@@ -81,6 +87,10 @@ func (h bodyGooseHandler) NamedBody() http1.Handler {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
 		out, err := h.service.NamedBody(ctx, in)
 		if err != nil {
 			h.errorEncoder(ctx, err, writer)
@@ -98,6 +108,10 @@ func (h bodyGooseHandler) NonBody() http1.Handler {
 		ctx := request.Context()
 		in, err := h.decoder.NonBody(ctx, request)
 		if err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
@@ -121,6 +135,10 @@ func (h bodyGooseHandler) HttpBodyStarBody() http1.Handler {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
 		out, err := h.service.HttpBodyStarBody(ctx, in)
 		if err != nil {
 			h.errorEncoder(ctx, err, writer)
@@ -138,6 +156,10 @@ func (h bodyGooseHandler) HttpBodyNamedBody() http1.Handler {
 		ctx := request.Context()
 		in, err := h.decoder.HttpBodyNamedBody(ctx, request)
 		if err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
@@ -161,6 +183,10 @@ func (h bodyGooseHandler) HttpRequest() http1.Handler {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
 		out, err := h.service.HttpRequest(ctx, in)
 		if err != nil {
 			h.errorEncoder(ctx, err, writer)
@@ -174,29 +200,31 @@ func (h bodyGooseHandler) HttpRequest() http1.Handler {
 }
 
 type bodyGooseRequestDecoder struct {
-	unmarshalOptions        protojson.UnmarshalOptions
-	shouldFailFast          bool
-	onValidationErrCallback goose.OnValidationErrCallback
+	unmarshalOptions protojson.UnmarshalOptions
 }
 
 func (decoder bodyGooseRequestDecoder) StarBody(ctx context.Context, r *http1.Request) (*BodyRequest, error) {
 	req := &BodyRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if err := goose.DecodeRequest(ctx, r, req, decoder.unmarshalOptions); err != nil {
 		return nil, err
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder bodyGooseRequestDecoder) NamedBody(ctx context.Context, r *http1.Request) (*NamedBodyRequest, error) {
 	req := &NamedBodyRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if req.Body == nil {
 		req.Body = &NamedBodyRequest_Body{}
@@ -204,35 +232,41 @@ func (decoder bodyGooseRequestDecoder) NamedBody(ctx context.Context, r *http1.R
 	if err := goose.DecodeRequest(ctx, r, req.Body, decoder.unmarshalOptions); err != nil {
 		return nil, err
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder bodyGooseRequestDecoder) NonBody(ctx context.Context, r *http1.Request) (*emptypb.Empty, error) {
 	req := &emptypb.Empty{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	if ok {
+		return req, nil
+	}
+	return req, nil
 }
 func (decoder bodyGooseRequestDecoder) HttpBodyStarBody(ctx context.Context, r *http1.Request) (*httpbody.HttpBody, error) {
 	req := &httpbody.HttpBody{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if err := goose.DecodeHttpBody(ctx, r, req); err != nil {
 		return nil, err
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder bodyGooseRequestDecoder) HttpBodyNamedBody(ctx context.Context, r *http1.Request) (*HttpBodyRequest, error) {
 	req := &HttpBodyRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if req.Body == nil {
 		req.Body = &httpbody.HttpBody{}
@@ -240,19 +274,21 @@ func (decoder bodyGooseRequestDecoder) HttpBodyNamedBody(ctx context.Context, r 
 	if err := goose.DecodeHttpBody(ctx, r, req.Body); err != nil {
 		return nil, err
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder bodyGooseRequestDecoder) HttpRequest(ctx context.Context, r *http1.Request) (*http.HttpRequest, error) {
 	req := &http.HttpRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if err := goose.DecodeHttpRequest(ctx, r, req); err != nil {
 		return nil, err
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 
 type bodyGooseEncodeResponse struct {

@@ -23,16 +23,16 @@ func AppendUserGooseRoute(router *http.ServeMux, service UserGooseService, opts 
 	handler := userGooseHandler{
 		service: service,
 		decoder: userGooseRequestDecoder{
-			unmarshalOptions:        options.UnmarshalOptions(),
-			shouldFailFast:          options.ShouldFailFast(),
-			onValidationErrCallback: options.OnValidationErrCallback(),
+			unmarshalOptions: options.UnmarshalOptions(),
 		},
 		encoder: userGooseEncodeResponse{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
 		},
-		errorEncoder: goose.DefaultEncodeError,
+		errorEncoder:            goose.DefaultEncodeError,
+		shouldFailFast:          options.ShouldFailFast(),
+		onValidationErrCallback: options.OnValidationErrCallback(),
 	}
 	router.Handle("POST /v1/user", goose.Chain(handler.CreateUser(), options.Middlewares()...))
 	router.Handle("DELETE /v1/user/{id}", goose.Chain(handler.DeleteUser(), options.Middlewares()...))
@@ -44,10 +44,12 @@ func AppendUserGooseRoute(router *http.ServeMux, service UserGooseService, opts 
 }
 
 type userGooseHandler struct {
-	service      UserGooseService
-	decoder      userGooseRequestDecoder
-	encoder      userGooseEncodeResponse
-	errorEncoder goose.ErrorEncoder
+	service                 UserGooseService
+	decoder                 userGooseRequestDecoder
+	encoder                 userGooseEncodeResponse
+	errorEncoder            goose.ErrorEncoder
+	shouldFailFast          bool
+	onValidationErrCallback goose.OnValidationErrCallback
 }
 
 func (h userGooseHandler) CreateUser() http.Handler {
@@ -55,6 +57,10 @@ func (h userGooseHandler) CreateUser() http.Handler {
 		ctx := request.Context()
 		in, err := h.decoder.CreateUser(ctx, request)
 		if err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
@@ -78,6 +84,10 @@ func (h userGooseHandler) DeleteUser() http.Handler {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
 		out, err := h.service.DeleteUser(ctx, in)
 		if err != nil {
 			h.errorEncoder(ctx, err, writer)
@@ -95,6 +105,10 @@ func (h userGooseHandler) ModifyUser() http.Handler {
 		ctx := request.Context()
 		in, err := h.decoder.ModifyUser(ctx, request)
 		if err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
@@ -118,6 +132,10 @@ func (h userGooseHandler) UpdateUser() http.Handler {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
 		out, err := h.service.UpdateUser(ctx, in)
 		if err != nil {
 			h.errorEncoder(ctx, err, writer)
@@ -135,6 +153,10 @@ func (h userGooseHandler) GetUser() http.Handler {
 		ctx := request.Context()
 		in, err := h.decoder.GetUser(ctx, request)
 		if err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
@@ -158,6 +180,10 @@ func (h userGooseHandler) ListUser() http.Handler {
 			h.errorEncoder(ctx, err, writer)
 			return
 		}
+		if err := goose.ValidateRequest(ctx, in, h.shouldFailFast, h.onValidationErrCallback); err != nil {
+			h.errorEncoder(ctx, err, writer)
+			return
+		}
 		out, err := h.service.ListUser(ctx, in)
 		if err != nil {
 			h.errorEncoder(ctx, err, writer)
@@ -171,29 +197,31 @@ func (h userGooseHandler) ListUser() http.Handler {
 }
 
 type userGooseRequestDecoder struct {
-	unmarshalOptions        protojson.UnmarshalOptions
-	shouldFailFast          bool
-	onValidationErrCallback goose.OnValidationErrCallback
+	unmarshalOptions protojson.UnmarshalOptions
 }
 
 func (decoder userGooseRequestDecoder) CreateUser(ctx context.Context, r *http.Request) (*CreateUserRequest, error) {
 	req := &CreateUserRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if err := goose.DecodeRequest(ctx, r, req, decoder.unmarshalOptions); err != nil {
 		return nil, err
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder userGooseRequestDecoder) DeleteUser(ctx context.Context, r *http.Request) (*DeleteUserRequest, error) {
 	req := &DeleteUserRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	vars := goose.FormFromPath(r, "id")
 	var varErr error
@@ -201,14 +229,16 @@ func (decoder userGooseRequestDecoder) DeleteUser(ctx context.Context, r *http.R
 	if varErr != nil {
 		return nil, varErr
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder userGooseRequestDecoder) ModifyUser(ctx context.Context, r *http.Request) (*ModifyUserRequest, error) {
 	req := &ModifyUserRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if err := goose.DecodeRequest(ctx, r, req, decoder.unmarshalOptions); err != nil {
 		return nil, err
@@ -219,14 +249,16 @@ func (decoder userGooseRequestDecoder) ModifyUser(ctx context.Context, r *http.R
 	if varErr != nil {
 		return nil, varErr
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder userGooseRequestDecoder) UpdateUser(ctx context.Context, r *http.Request) (*UpdateUserRequest, error) {
 	req := &UpdateUserRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	if req.Item == nil {
 		req.Item = &UserItem{}
@@ -240,14 +272,16 @@ func (decoder userGooseRequestDecoder) UpdateUser(ctx context.Context, r *http.R
 	if varErr != nil {
 		return nil, varErr
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder userGooseRequestDecoder) GetUser(ctx context.Context, r *http.Request) (*GetUserRequest, error) {
 	req := &GetUserRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	vars := goose.FormFromPath(r, "id")
 	var varErr error
@@ -255,14 +289,16 @@ func (decoder userGooseRequestDecoder) GetUser(ctx context.Context, r *http.Requ
 	if varErr != nil {
 		return nil, varErr
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 func (decoder userGooseRequestDecoder) ListUser(ctx context.Context, r *http.Request) (*ListUserRequest, error) {
 	req := &ListUserRequest{}
-	if ok, err := goose.CustomDecodeRequest(ctx, r, req); ok && err != nil {
+	ok, err := goose.CustomDecodeRequest(ctx, r, req)
+	if err != nil {
 		return nil, err
-	} else if ok && err == nil {
-		return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	}
+	if ok {
+		return req, nil
 	}
 	queries := r.URL.Query()
 	var queryErr error
@@ -271,7 +307,7 @@ func (decoder userGooseRequestDecoder) ListUser(ctx context.Context, r *http.Req
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	return req, goose.ValidateRequest(ctx, req, decoder.shouldFailFast, decoder.onValidationErrCallback)
+	return req, nil
 }
 
 type userGooseEncodeResponse struct {
