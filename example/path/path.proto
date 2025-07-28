@@ -1,5 +1,5 @@
 syntax = "proto3";
-package leo.gorilla.example.path.v1;
+package leo.goose.example.path.v1;
 option go_package = "github.com/go-leo/goose/example/path/v1;path";
 
 import "google/api/httpbody.proto";

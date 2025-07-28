@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
 	httpbody "google.golang.org/genproto/googleapis/api/httpbody"
 	protojson "google.golang.org/protobuf/encoding/protojson"
 )
@@ -108,8 +107,8 @@ func (m *MockEnumPathService) EnumPath(ctx context.Context, req *EnumPathRequest
 // ---- Test Cases ----
 
 func TestBoolPath(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendBoolPathGorillaRoute(router, &MockBoolPathService{})
+	router := http.NewServeMux()
+	router = AppendBoolPathGooseRoute(router, &MockBoolPathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -130,8 +129,8 @@ func TestBoolPath(t *testing.T) {
 }
 
 func TestInt32Path(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendInt32PathGorillaRoute(router, &MockInt32PathService{})
+	router := http.NewServeMux()
+	router = AppendInt32PathGooseRoute(router, &MockInt32PathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -152,8 +151,8 @@ func TestInt32Path(t *testing.T) {
 }
 
 func TestInt64Path(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendInt64PathGorillaRoute(router, &MockInt64PathService{})
+	router := http.NewServeMux()
+	router = AppendInt64PathGooseRoute(router, &MockInt64PathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -174,8 +173,8 @@ func TestInt64Path(t *testing.T) {
 }
 
 func TestUint32Path(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendUint32PathGorillaRoute(router, &MockUint32PathService{})
+	router := http.NewServeMux()
+	router = AppendUint32PathGooseRoute(router, &MockUint32PathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -196,8 +195,8 @@ func TestUint32Path(t *testing.T) {
 }
 
 func TestUint64Path(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendUint64PathGorillaRoute(router, &MockUint64PathService{})
+	router := http.NewServeMux()
+	router = AppendUint64PathGooseRoute(router, &MockUint64PathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -218,8 +217,8 @@ func TestUint64Path(t *testing.T) {
 }
 
 func TestFloatPath(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendFloatPathGorillaRoute(router, &MockFloatPathService{})
+	router := http.NewServeMux()
+	router = AppendFloatPathGooseRoute(router, &MockFloatPathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -240,8 +239,8 @@ func TestFloatPath(t *testing.T) {
 }
 
 func TestDoublePath(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendDoublePathGorillaRoute(router, &MockDoublePathService{})
+	router := http.NewServeMux()
+	router = AppendDoublePathGooseRoute(router, &MockDoublePathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -262,8 +261,8 @@ func TestDoublePath(t *testing.T) {
 }
 
 func TestStringPath(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendStringPathGorillaRoute(router, &MockStringPathService{})
+	router := http.NewServeMux()
+	router = AppendStringPathGooseRoute(router, &MockStringPathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 
@@ -284,8 +283,8 @@ func TestStringPath(t *testing.T) {
 }
 
 func TestEnumPath(t *testing.T) {
-	router := mux.NewRouter()
-	router = AppendEnumPathGorillaRoute(router, &MockEnumPathService{})
+	router := http.NewServeMux()
+	router = AppendEnumPathGooseRoute(router, &MockEnumPathService{})
 	server := httptest.NewServer(router)
 	defer server.Close()
 

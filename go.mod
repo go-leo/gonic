@@ -3,7 +3,6 @@ module github.com/go-leo/goose
 go 1.22
 
 require (
-	github.com/gorilla/mux v1.8.1
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	golang.org/x/net v0.35.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a

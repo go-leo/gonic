@@ -1,5 +1,5 @@
 syntax = "proto3";
-package leo.gorilla.example.user.v1;
+package leo.goose.example.user.v1;
 option go_package = "github.com/go-leo/goose/example/user/v1;user";
 
 import "google/api/annotations.proto";

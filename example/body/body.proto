@@ -1,5 +1,5 @@
 syntax = "proto3";
-package leo.gorilla.example.body.v1;
+package leo.goose.example.body.v1;
 option go_package = "github.com/go-leo/goose/example/body/v1;body";
 
 import "google/protobuf/empty.proto";

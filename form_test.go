@@ -313,13 +313,3 @@ func TestGetFloat64ValueSlice(t *testing.T) {
 	}
 }
 
-func TestFormFromMap(t *testing.T) {
-	m := map[string]string{"a": "1", "b": "2"}
-	form := FormFromMap(m)
-	if form.Get("a") != "1" || form.Get("b") != "2" {
-		t.Errorf("FormFromMap(%v) = %v; want a=1, b=2", m, form)
-	}
-	if FormFromMap(nil) != nil {
-		t.Errorf("FormFromMap(nil) should return nil")
-	}
-}

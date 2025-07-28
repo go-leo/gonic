@@ -8,8 +8,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/gorilla/mux"
 )
 
 // ---- Mock Service ----
@@ -48,8 +46,8 @@ func (m *MockUserService) ListUser(ctx context.Context, req *ListUserRequest) (*
 }
 
 func main() {
-	router := mux.NewRouter()
-	router = AppendUserGorillaRoute(router, &MockUserService{})
+	router := http.NewServeMux()
+	router = AppendUserGooseRoute(router, &MockUserService{})
 	server := http.Server{Addr: ":8000", Handler: router}
 	server.ListenAndServe()
 }
@@ -57,8 +55,8 @@ func main() {
 // ---- Test Cases ----
 
 func setupServer() *httptest.Server {
-	router := mux.NewRouter()
-	router = AppendUserGorillaRoute(router, &MockUserService{})
+	router := http.NewServeMux()
+	router = AppendUserGooseRoute(router, &MockUserService{})
 	return httptest.NewServer(router)
 }
 

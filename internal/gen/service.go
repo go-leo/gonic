@@ -60,12 +60,12 @@ func NewServices(file *protogen.File) ([]*Service, error) {
 				protoMethod: pbMethod,
 			}
 			if endpoint.IsStreaming() {
-				return nil, fmt.Errorf("gorilla: unsupport stream method, %s", endpoint.FullName())
+				return nil, fmt.Errorf("goose: unsupport stream method, %s", endpoint.FullName())
 			}
 			endpoint.SetHttpRule()
 			pattern, err := ParsePattern(endpoint.Path())
 			if err != nil {
-				return nil, fmt.Errorf("gorilla: %s", err)
+				return nil, fmt.Errorf("goose: %s", err)
 			}
 			endpoint.SetPattern(pattern)
 			endpoints = append(endpoints, endpoint)

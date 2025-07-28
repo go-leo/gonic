@@ -1,8 +1,8 @@
-# gorilla
-gorilla 参考 Google API 设计方案，通过定义 proto 文件，快速生成Go语言的Restful服务路由。
+# goose
+goose 参考 Google API 设计方案，通过定义 proto 文件，快速生成Go语言的Restful服务路由。
 
 # 路由规则
-gorilla 底层基于 [gorilla/mux](http://github.com/gorilla/mux) 管理http路由。详细定义规则见[gorilla/mux](https://github.com/gorilla/mux)
+goose 底层基于 [Go 1.22 HTTP Router](https://go.dev/blog/routing-enhancements) 管理http路由。详细定义规则见[Enhanced ServeMux routing](https://github.com/golang/go/issues/61410)
 
 # 优点
 1. 基于proto文件，快速生成Restful服务路由
@@ -14,13 +14,13 @@ gorilla 底层基于 [gorilla/mux](http://github.com/gorilla/mux) 管理http路�
 
 # 安装
 ```
-go install github.com/go-leo/goose/cmd/protoc-gen-gorilla@latest
+go install github.com/go-leo/goose/cmd/protoc-gen-goose@latest
 ```
 
 # Example
 ```protobuf
 syntax = "proto3";
-package leo.gorilla.example.user.v1;
+package leo.goose.example.user.v1;
 option go_package = "github.com/go-leo/goose/example/user/v1;user";
 
 import "google/api/annotations.proto";
@@ -156,14 +156,14 @@ protoc \
 --proto_path=../../ \
 --go_out=. \
 --go_opt=paths=source_relative \
---gorilla_out=. \
---gorilla_opt=paths=source_relative \
+--goose_out=. \
+--goose_opt=paths=source_relative \
 user/user.proto
 ```
 生成一下文件
 ```
 user
-├── user_gorilla.pb.go
+├── user_goose.pb.go
 ├── user_test.go
 ├── user.pb.go
 └── user.proto
@@ -209,8 +209,8 @@ func (m *MockUserService) ListUser(ctx context.Context, req *ListUserRequest) (*
 # 创建Server
 ```go
 func main() {
-	router := mux.NewRouter()
-	router = AppendUserGorillaRoute(router, &MockUserService{})
+	router := http.NewServeMux()
+	router = AppendUserGooseRoute(router, &MockUserService{})
 	server := http.Server{Addr: ":8000", Handler: router}
 	server.ListenAndServe()
 }
@@ -219,4 +219,5 @@ func main() {
 更多示例见 [example]https://github.com/go-leo/goose/tree/example/user/server
 
 # 子妹项目
-[github.com/go-leo/gonic](https://github.com/go-leo/gonic) 使用 gin-gonic/gin 管理路由。
+* [github.com/go-leo/gonic](https://github.com/go-leo/gonic) 使用 gin-gonic/gin 管理路由。
+* [github.com/go-leo/gorilla](https://github.com/go-leo/gorilla) 使用 gorilla/mux 管理路由。
