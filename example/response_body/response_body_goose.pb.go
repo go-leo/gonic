@@ -27,7 +27,7 @@ func AppendResponseBodyGooseRoute(router *http1.ServeMux, service ResponseBodyGo
 		decoder: responseBodyGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: responseBodyGooseEncodeResponse{
+		encoder: responseBodyGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -48,7 +48,7 @@ func AppendResponseBodyGooseRoute(router *http1.ServeMux, service ResponseBodyGo
 type responseBodyGooseHandler struct {
 	service                 ResponseBodyGooseService
 	decoder                 responseBodyGooseRequestDecoder
-	encoder                 responseBodyGooseEncodeResponse
+	encoder                 responseBodyGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -305,27 +305,27 @@ func (decoder responseBodyGooseRequestDecoder) HttpResponse(ctx context.Context,
 	return req, nil
 }
 
-type responseBodyGooseEncodeResponse struct {
+type responseBodyGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder responseBodyGooseEncodeResponse) OmittedResponse(ctx context.Context, w http1.ResponseWriter, resp *Response) error {
+func (encoder responseBodyGooseResponseEncoder) OmittedResponse(ctx context.Context, w http1.ResponseWriter, resp *Response) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }
-func (encoder responseBodyGooseEncodeResponse) StarResponse(ctx context.Context, w http1.ResponseWriter, resp *Response) error {
+func (encoder responseBodyGooseResponseEncoder) StarResponse(ctx context.Context, w http1.ResponseWriter, resp *Response) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }
-func (encoder responseBodyGooseEncodeResponse) NamedResponse(ctx context.Context, w http1.ResponseWriter, resp *NamedBodyResponse) error {
+func (encoder responseBodyGooseResponseEncoder) NamedResponse(ctx context.Context, w http1.ResponseWriter, resp *NamedBodyResponse) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp.GetBody()), encoder.marshalOptions)
 }
-func (encoder responseBodyGooseEncodeResponse) HttpBodyResponse(ctx context.Context, w http1.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder responseBodyGooseResponseEncoder) HttpBodyResponse(ctx context.Context, w http1.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
-func (encoder responseBodyGooseEncodeResponse) HttpBodyNamedResponse(ctx context.Context, w http1.ResponseWriter, resp *NamedHttpBodyResponse) error {
+func (encoder responseBodyGooseResponseEncoder) HttpBodyNamedResponse(ctx context.Context, w http1.ResponseWriter, resp *NamedHttpBodyResponse) error {
 	return goose.EncodeHttpBody(ctx, w, resp.GetBody())
 }
-func (encoder responseBodyGooseEncodeResponse) HttpResponse(ctx context.Context, w http1.ResponseWriter, resp *http.HttpResponse) error {
+func (encoder responseBodyGooseResponseEncoder) HttpResponse(ctx context.Context, w http1.ResponseWriter, resp *http.HttpResponse) error {
 	return goose.EncodeHttpResponse(ctx, w, resp)
 }

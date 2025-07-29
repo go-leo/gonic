@@ -25,7 +25,7 @@ func AppendUserGooseRoute(router *http.ServeMux, service UserGooseService, opts 
 		decoder: userGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: userGooseEncodeResponse{
+		encoder: userGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -46,7 +46,7 @@ func AppendUserGooseRoute(router *http.ServeMux, service UserGooseService, opts 
 type userGooseHandler struct {
 	service                 UserGooseService
 	decoder                 userGooseRequestDecoder
-	encoder                 userGooseEncodeResponse
+	encoder                 userGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -310,27 +310,27 @@ func (decoder userGooseRequestDecoder) ListUser(ctx context.Context, r *http.Req
 	return req, nil
 }
 
-type userGooseEncodeResponse struct {
+type userGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder userGooseEncodeResponse) CreateUser(ctx context.Context, w http.ResponseWriter, resp *CreateUserResponse) error {
+func (encoder userGooseResponseEncoder) CreateUser(ctx context.Context, w http.ResponseWriter, resp *CreateUserResponse) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }
-func (encoder userGooseEncodeResponse) DeleteUser(ctx context.Context, w http.ResponseWriter, resp *DeleteUserResponse) error {
+func (encoder userGooseResponseEncoder) DeleteUser(ctx context.Context, w http.ResponseWriter, resp *DeleteUserResponse) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }
-func (encoder userGooseEncodeResponse) ModifyUser(ctx context.Context, w http.ResponseWriter, resp *ModifyUserResponse) error {
+func (encoder userGooseResponseEncoder) ModifyUser(ctx context.Context, w http.ResponseWriter, resp *ModifyUserResponse) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }
-func (encoder userGooseEncodeResponse) UpdateUser(ctx context.Context, w http.ResponseWriter, resp *UpdateUserResponse) error {
+func (encoder userGooseResponseEncoder) UpdateUser(ctx context.Context, w http.ResponseWriter, resp *UpdateUserResponse) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }
-func (encoder userGooseEncodeResponse) GetUser(ctx context.Context, w http.ResponseWriter, resp *GetUserResponse) error {
+func (encoder userGooseResponseEncoder) GetUser(ctx context.Context, w http.ResponseWriter, resp *GetUserResponse) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }
-func (encoder userGooseEncodeResponse) ListUser(ctx context.Context, w http.ResponseWriter, resp *ListUserResponse) error {
+func (encoder userGooseResponseEncoder) ListUser(ctx context.Context, w http.ResponseWriter, resp *ListUserResponse) error {
 	return goose.EncodeResponse(ctx, w, encoder.responseTransformer(ctx, resp), encoder.marshalOptions)
 }

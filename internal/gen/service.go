@@ -44,8 +44,8 @@ func (s *Service) RequestDecoderName() string {
 	return s.GorillaName() + "RequestDecoder"
 }
 
-func (s *Service) EncodeResponseName() string {
-	return s.GorillaName() + "EncodeResponse"
+func (s *Service) ResponseEncoderName() string {
+	return s.GorillaName() + "ResponseEncoder"
 }
 
 func NewServices(file *protogen.File) ([]*Service, error) {

@@ -23,7 +23,7 @@ func AppendBoolQueryGooseRoute(router *http.ServeMux, service BoolQueryGooseServ
 		decoder: boolQueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: boolQueryGooseEncodeResponse{
+		encoder: boolQueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -39,7 +39,7 @@ func AppendBoolQueryGooseRoute(router *http.ServeMux, service BoolQueryGooseServ
 type boolQueryGooseHandler struct {
 	service                 BoolQueryGooseService
 	decoder                 boolQueryGooseRequestDecoder
-	encoder                 boolQueryGooseEncodeResponse
+	encoder                 boolQueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -95,13 +95,13 @@ func (decoder boolQueryGooseRequestDecoder) BoolQuery(ctx context.Context, r *ht
 	return req, nil
 }
 
-type boolQueryGooseEncodeResponse struct {
+type boolQueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder boolQueryGooseEncodeResponse) BoolQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder boolQueryGooseResponseEncoder) BoolQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -116,7 +116,7 @@ func AppendInt32QueryGooseRoute(router *http.ServeMux, service Int32QueryGooseSe
 		decoder: int32QueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: int32QueryGooseEncodeResponse{
+		encoder: int32QueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -132,7 +132,7 @@ func AppendInt32QueryGooseRoute(router *http.ServeMux, service Int32QueryGooseSe
 type int32QueryGooseHandler struct {
 	service                 Int32QueryGooseService
 	decoder                 int32QueryGooseRequestDecoder
-	encoder                 int32QueryGooseEncodeResponse
+	encoder                 int32QueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -194,13 +194,13 @@ func (decoder int32QueryGooseRequestDecoder) Int32Query(ctx context.Context, r *
 	return req, nil
 }
 
-type int32QueryGooseEncodeResponse struct {
+type int32QueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder int32QueryGooseEncodeResponse) Int32Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder int32QueryGooseResponseEncoder) Int32Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -215,7 +215,7 @@ func AppendInt64QueryGooseRoute(router *http.ServeMux, service Int64QueryGooseSe
 		decoder: int64QueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: int64QueryGooseEncodeResponse{
+		encoder: int64QueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -231,7 +231,7 @@ func AppendInt64QueryGooseRoute(router *http.ServeMux, service Int64QueryGooseSe
 type int64QueryGooseHandler struct {
 	service                 Int64QueryGooseService
 	decoder                 int64QueryGooseRequestDecoder
-	encoder                 int64QueryGooseEncodeResponse
+	encoder                 int64QueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -293,13 +293,13 @@ func (decoder int64QueryGooseRequestDecoder) Int64Query(ctx context.Context, r *
 	return req, nil
 }
 
-type int64QueryGooseEncodeResponse struct {
+type int64QueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder int64QueryGooseEncodeResponse) Int64Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder int64QueryGooseResponseEncoder) Int64Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -314,7 +314,7 @@ func AppendUint32QueryGooseRoute(router *http.ServeMux, service Uint32QueryGoose
 		decoder: uint32QueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: uint32QueryGooseEncodeResponse{
+		encoder: uint32QueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -330,7 +330,7 @@ func AppendUint32QueryGooseRoute(router *http.ServeMux, service Uint32QueryGoose
 type uint32QueryGooseHandler struct {
 	service                 Uint32QueryGooseService
 	decoder                 uint32QueryGooseRequestDecoder
-	encoder                 uint32QueryGooseEncodeResponse
+	encoder                 uint32QueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -389,13 +389,13 @@ func (decoder uint32QueryGooseRequestDecoder) Uint32Query(ctx context.Context, r
 	return req, nil
 }
 
-type uint32QueryGooseEncodeResponse struct {
+type uint32QueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder uint32QueryGooseEncodeResponse) Uint32Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder uint32QueryGooseResponseEncoder) Uint32Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -410,7 +410,7 @@ func AppendUint64QueryGooseRoute(router *http.ServeMux, service Uint64QueryGoose
 		decoder: uint64QueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: uint64QueryGooseEncodeResponse{
+		encoder: uint64QueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -426,7 +426,7 @@ func AppendUint64QueryGooseRoute(router *http.ServeMux, service Uint64QueryGoose
 type uint64QueryGooseHandler struct {
 	service                 Uint64QueryGooseService
 	decoder                 uint64QueryGooseRequestDecoder
-	encoder                 uint64QueryGooseEncodeResponse
+	encoder                 uint64QueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -485,13 +485,13 @@ func (decoder uint64QueryGooseRequestDecoder) Uint64Query(ctx context.Context, r
 	return req, nil
 }
 
-type uint64QueryGooseEncodeResponse struct {
+type uint64QueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder uint64QueryGooseEncodeResponse) Uint64Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder uint64QueryGooseResponseEncoder) Uint64Query(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -506,7 +506,7 @@ func AppendFloatQueryGooseRoute(router *http.ServeMux, service FloatQueryGooseSe
 		decoder: floatQueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: floatQueryGooseEncodeResponse{
+		encoder: floatQueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -522,7 +522,7 @@ func AppendFloatQueryGooseRoute(router *http.ServeMux, service FloatQueryGooseSe
 type floatQueryGooseHandler struct {
 	service                 FloatQueryGooseService
 	decoder                 floatQueryGooseRequestDecoder
-	encoder                 floatQueryGooseEncodeResponse
+	encoder                 floatQueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -578,13 +578,13 @@ func (decoder floatQueryGooseRequestDecoder) FloatQuery(ctx context.Context, r *
 	return req, nil
 }
 
-type floatQueryGooseEncodeResponse struct {
+type floatQueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder floatQueryGooseEncodeResponse) FloatQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder floatQueryGooseResponseEncoder) FloatQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -599,7 +599,7 @@ func AppendDoubleQueryGooseRoute(router *http.ServeMux, service DoubleQueryGoose
 		decoder: doubleQueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: doubleQueryGooseEncodeResponse{
+		encoder: doubleQueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -615,7 +615,7 @@ func AppendDoubleQueryGooseRoute(router *http.ServeMux, service DoubleQueryGoose
 type doubleQueryGooseHandler struct {
 	service                 DoubleQueryGooseService
 	decoder                 doubleQueryGooseRequestDecoder
-	encoder                 doubleQueryGooseEncodeResponse
+	encoder                 doubleQueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -671,13 +671,13 @@ func (decoder doubleQueryGooseRequestDecoder) DoubleQuery(ctx context.Context, r
 	return req, nil
 }
 
-type doubleQueryGooseEncodeResponse struct {
+type doubleQueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder doubleQueryGooseEncodeResponse) DoubleQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder doubleQueryGooseResponseEncoder) DoubleQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -692,7 +692,7 @@ func AppendStringQueryGooseRoute(router *http.ServeMux, service StringQueryGoose
 		decoder: stringQueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: stringQueryGooseEncodeResponse{
+		encoder: stringQueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -708,7 +708,7 @@ func AppendStringQueryGooseRoute(router *http.ServeMux, service StringQueryGoose
 type stringQueryGooseHandler struct {
 	service                 StringQueryGooseService
 	decoder                 stringQueryGooseRequestDecoder
-	encoder                 stringQueryGooseEncodeResponse
+	encoder                 stringQueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -764,13 +764,13 @@ func (decoder stringQueryGooseRequestDecoder) StringQuery(ctx context.Context, r
 	return req, nil
 }
 
-type stringQueryGooseEncodeResponse struct {
+type stringQueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder stringQueryGooseEncodeResponse) StringQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder stringQueryGooseResponseEncoder) StringQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
 
@@ -785,7 +785,7 @@ func AppendEnumQueryGooseRoute(router *http.ServeMux, service EnumQueryGooseServ
 		decoder: enumQueryGooseRequestDecoder{
 			unmarshalOptions: options.UnmarshalOptions(),
 		},
-		encoder: enumQueryGooseEncodeResponse{
+		encoder: enumQueryGooseResponseEncoder{
 			marshalOptions:      options.MarshalOptions(),
 			unmarshalOptions:    options.UnmarshalOptions(),
 			responseTransformer: options.ResponseTransformer(),
@@ -801,7 +801,7 @@ func AppendEnumQueryGooseRoute(router *http.ServeMux, service EnumQueryGooseServ
 type enumQueryGooseHandler struct {
 	service                 EnumQueryGooseService
 	decoder                 enumQueryGooseRequestDecoder
-	encoder                 enumQueryGooseEncodeResponse
+	encoder                 enumQueryGooseResponseEncoder
 	errorEncoder            goose.ErrorEncoder
 	shouldFailFast          bool
 	onValidationErrCallback goose.OnValidationErrCallback
@@ -855,12 +855,12 @@ func (decoder enumQueryGooseRequestDecoder) EnumQuery(ctx context.Context, r *ht
 	return req, nil
 }
 
-type enumQueryGooseEncodeResponse struct {
+type enumQueryGooseResponseEncoder struct {
 	marshalOptions      protojson.MarshalOptions
 	unmarshalOptions    protojson.UnmarshalOptions
 	responseTransformer goose.ResponseTransformer
 }
 
-func (encoder enumQueryGooseEncodeResponse) EnumQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
+func (encoder enumQueryGooseResponseEncoder) EnumQuery(ctx context.Context, w http.ResponseWriter, resp *httpbody.HttpBody) error {
 	return goose.EncodeHttpBody(ctx, w, resp)
 }
