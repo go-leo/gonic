@@ -1,4 +1,4 @@
-module github.com/go-leo/gonic
+module github.com/go-leo/gonic/example/user/server
 
 go 1.23.0
 
@@ -6,10 +6,7 @@ toolchain go1.23.11
 
 require (
 	github.com/gin-gonic/gin v1.10.1
-	golang.org/x/exp v0.0.0-20250811191247-51f88131bc50
-	google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074
-	google.golang.org/protobuf v1.36.6
+	github.com/go-leo/gonic v1.6.5
 )
 
 require (
@@ -34,8 +31,12 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792 // indirect
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

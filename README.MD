@@ -1,680 +1,223 @@
-- [gors](#gors)
-- [快速开始](#快速开始)
-	- [1. 安装](#1-安装)
-	- [2. 定义Restful服务](#2-定义restful服务)
-	- [3. 生成gin路由代码](#3-生成gin路由代码)
-	- [4. 实现服务](#4-实现服务)
-	- [5. 启动服务](#5-启动服务)
-	- [注意](#注意)
-- [注解大全](#注解大全)
-	- [@GORS](#gors-1)
-	- [@Path](#path)
-	- [HTTP Method注解](#http-method注解)
-		- [@GET](#get)
-		- [@HEAD](#head)
-		- [@POST](#post)
-		- [@PUT](#put)
-		- [@PATCH](#patch)
-		- [@DELETE](#delete)
-		- [@CONNECT](#connect)
-		- [@OPTIONS](#options)
-		- [@TRACE](#trace)
-	- [Binding 注解](#binding-注解)
-		- [@UriBinding](#uribinding)
-		- [@QueryBinding](#querybinding)
-		- [@HeaderBinding](#headerbinding)
-		- [@JSONBinding](#jsonbinding)
-		- [@FormBinding](#formbinding)
-		- [@FormPostBinding](#formpostbinding)
-		- [@FormMultipartBinding](#formmultipartbinding)
-		- [@ProtoBufBinding](#protobufbinding)
-		- [@ProtoJSONBinding](#protojsonbinding)
-		- [@MsgPackBinding](#msgpackbinding)
-		- [@XMLBinding](#xmlbinding)
-		- [@YAMLBinding](#yamlbinding)
-		- [@TOMLBinding](#tomlbinding)
-		- [@CustomBinding](#custombinding)
-	- [Render 注解](#render-注解)
-		- [@BytesRender](#bytesrender)
-		- [@StringRender](#stringrender)
-		- [@TextRender](#textrender)
-		- [@HTMLRender](#htmlrender)
-		- [@RedirectRender](#redirectrender)
-		- [@ReaderRender](#readerrender)
-		- [@JSONRender](#jsonrender)
-		- [@IndentedJSONRender](#indentedjsonrender)
-		- [@SecureJSONRender](#securejsonrender)
-		- [@JsonpJSONRender](#jsonpjsonrender)
-		- [@PureJSONRender](#purejsonrender)
-		- [@AsciiJSONRender](#asciijsonrender)
-		- [@ProtoJSONRender](#protojsonrender)
-		- [@XMLRender](#xmlrender)
-		- [@YAMLRender](#yamlrender)
-		- [@ProtoBufRender](#protobufrender)
-		- [@MsgPackRender](#msgpackrender)
-		- [@TOMLRender](#tomlrender)
-		- [@CustomRender](#customrender)
-- [Validate](#validate)
-	- [Validator接口](#validator接口)
-# gors
-
-gors（Golang Restful service）可以生成Go语言的Restful服务。
-在Interface或者grpc上，标注特殊的注解，可以生成已Gin路由。
+# gonic
+gonic 参考 Google API 设计方案，通过定义 proto 文件，快速生成Go语言的Restful服务路由。
 
 
-# 快速开始
-## 1. 安装
+# 路由规则
+gonic 底层基于 [gin-gonic/gin](github.com/gin-gonic/gin) 管理http路由。详细定义规则见[gin-gonic/gin](github.com/gin-gonic/gin)
 
-如果通过Interface生成Restful服务，需要安装gors：
+# 优点
+1. 基于proto文件，快速生成Restful服务路由
+2. 零配置
+3. 低依赖
+4. 非反射取值，效率非常高
+5. 稳定，所有方法经过单元测试
+6. 代码简单，良好的代码设计，减少出错
+
+# 安装
 ```
-go install github.com/go-leo/gors/cmd/gors@latest
+go install github.com/go-leo/gonic/cmd/protoc-gen-gonic@latest
 ```
 
-如果通过grpc生成Restful服务，需要安装protoc-gen-go-gors：
-```
-go install github.com/go-leo/gors/cmd/protoc-gen-go-gors@latest
-```
-
-## 2. 定义Restful服务
-
-通过Interface定义接口:
-```go
-//go:generate gors -service Service
-
-// Service
-// @GORS @Path("/api)  @Path("/v1)
-type Service interface {
-	// Method
-    // @GORS @GET @Path("/method/:id) @UriBinding @JSONRender
-    Method(context.Context, *MethodReq) (*MethodResp, error)
-}
-type MethodReq struct {
-	ID int `uri:"id"`
-}
-type MethodResp struct {
-	V int `json:"v,omitempty"`
-}
-```
-
-或者通过grpc定义接口：
-```proto
+# Example
+```protobuf
 syntax = "proto3";
-package protoservice;
-option go_package = "github.com/go-leo/gors/example/api/protoservice;protoservice";
+package leo.gonic.example.user.v1;
+option go_package = "github.com/go-leo/gonic/example/user/v1;user";
 
-// @GORS @Path(/v1)
-service ProtoService {
-  // @GORS @POST @Path(/Method) @ProtoJSONBinding @ProtoJSONRender
-  rpc Method (HelloRequest) returns (HelloReply) {}
+import "google/api/annotations.proto";
+
+service User {
+
+  // CreateUser 创建用户
+  // `POST /v1/user { "name": "Leo" }` | `CreateUserRequest(name: "Leo")`
+  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {
+    option (google.api.http) = {
+      post : "/v1/user"
+      body : "*"
+    };
+  }
+
+  // DeleteUser 删除用户
+    // `DELETE /v1/user/10000 | `DeleteUserRequest(id: 10000)`
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse) {
+    option (google.api.http) = {
+      delete : "/v1/user/{id}"
+    };
+  }
+
+  // ModifyUser 修改用户
+  // `PUT /v1/user/10000 { "name": "Leo" }` | `ModifyUserRequest(id: 10000, name: "Leo")`
+  rpc ModifyUser (ModifyUserRequest) returns (ModifyUserResponse) {
+    option (google.api.http) = {
+      put : "/v1/user/{id}"
+      body : "*"
+    };
+  }
+
+  // UpdateUser 更新用户
+  // `PUT /v1/user/10000 { "id": "99999" ,"name": "Leo" }` | `UpdateUserRequest(id: 10000, UserItem(id: 9999, name: "Leo"))`
+  rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse) {
+    option (google.api.http) = {
+      patch : "/v1/user/{id}"
+      body : "item"
+    };
+  }
+
+  // GetUser 获取用户
+  // `GET /v1/user/10000` | `GetUserRequest(id: 10000)`
+  rpc GetUser (GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get : "/v1/user/{id}"
+    };
+  }
+
+  // ListUser 获取用户列表
+  // `GET /v1/users?page_num=1&page_size=10` | `ListUserRequest(page_num: 1, page_size: 10)`
+  rpc ListUser (ListUserRequest) returns (ListUserResponse) {
+    option (google.api.http) = {
+      get : "/v1/users"
+    };
+  }
 }
 
-message HelloRequest {
+message UserItem {
+  int64 id = 1;
+  string name = 2;
+}
+
+message CreateUserRequest {
   string name = 1;
-  int32 age = 2;
-  double salary = 3;
-  string Token = 4;
 }
 
-message HelloReply {
-  string message = 1;
+message CreateUserResponse {
+  UserItem item = 1;
 }
 
-```
+message DeleteUserRequest {
+  int64 id = 1;
+}
 
+message DeleteUserResponse {
+  int64 id = 1;
+}
 
-## 3. 生成gin路由代码
+message ModifyUserRequest {
+  int64 id = 1;
+  string name = 2;
+}
 
-通过Interface定义接口，运行`go generate ./...`命令，生产文件service_gors.go
+message ModifyUserResponse {
+    int64 id = 1;
+  string name = 2;
+}
 
-```go
-// Code generated by "gors -service Service"; DO NOT EDIT.
+message UpdateUserRequest {
+  int64 id = 1;
+  UserItem item = 2;
+}
 
-package demo
+message UpdateUserResponse {
+  int64 id = 1;
+  UserItem item = 2;
+}
 
-import (
-	gin "github.com/gin-gonic/gin"
-	gors "github.com/go-leo/gors"
-	http "net/http"
-)
+message GetUserRequest {
+  int64 id = 1;
+}
 
-func ServiceRoutes(srv Service, opts ...gors.Option) []gors.Route {
-	options := gors.New(opts...)
-	_ = options
-	return []gors.Route{
-		gors.NewRoute(
-			http.MethodGet,
-			"/api/v1/method/:id",
-			func(c *gin.Context) {
-				var rpcMethodName = "/demo.Service/Method"
-				var ctx = gors.NewContext(c, rpcMethodName)
-				var req *MethodReq
-				var resp *MethodResp
-				var err error
-				req = new(MethodReq)
-				if err = gors.RequestBind(
-					ctx, req, options.Tag,
-					gors.UriBinding,
-				); err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				resp, err = srv.Method(ctx, req)
-				if err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				gors.ResponseRender(ctx, gors.StatusCode(ctx), resp, "", gors.JSONRender, options.ResponseWrapper)
-			},
-		),
-	}
+message GetUserResponse {
+  UserItem item = 1;
+}
+
+message ListUserRequest {
+  int64 page_num = 1;
+  int64 page_size = 2;
+}
+
+message ListUserResponse {
+  int64 page_num = 1;
+  int64 page_size = 2;
+  repeated UserItem list = 3;
 }
 ```
+定义了6个接口：分别是
+1. 创建用户，POST请求
+2. 删除用户，DELETE请求
+3. 修改用户，PUT请求
+4. 更新用户，PATCH请求
+5. 获取用户, GET请求
+6. 获取用户列表, GET请求
 
-通过protocolbuf生成，运行一下命令，生产文件service_gors.go
+# 生成路由
+执行命令
 ```
 protoc \
-		--proto_path=. \
-		--go_out=. \
-		--go_opt=module=github.com/go-leo/gors \
-		--go-grpc_out=. \
-		--go-grpc_opt=module=github.com/go-leo/gors \
-		--go-gors_out=. \
-		--go-gors_opt=module=github.com/go-leo/gors \
-		example/api/*/*.proto
+--proto_path=. \
+--proto_path=../third_party \
+--proto_path=../../ \
+--go_out=. \
+--go_opt=paths=source_relative \
+--gonic_out=. \
+--gonic_opt=paths=source_relative \
+user/user.proto
+```
+生成一下文件
+```
+user
+├── user_gonic.pb.go
+├── user_test.go
+├── user.pb.go
+└── user.proto
 ```
 
+# 实现UserService代码：
 ```go
-// Code generated by protoc-gen-go-gors. DO NOT EDIT.
 
-package protoservice
+type MockUserService struct{}
 
-import (
-	gin "github.com/gin-gonic/gin"
-	gors "github.com/go-leo/gors"
-	grpc "google.golang.org/grpc"
-	metadata "google.golang.org/grpc/metadata"
-	http "net/http"
-)
-
-func ProtoServiceClientRoutes(cli ProtoServiceClient, opts ...gors.Option) []gors.Route {
-	options := gors.New(opts...)
-	_ = options
-	if len(options.Tag) == 0 {
-		options.Tag = "json"
-	}
-	return []gors.Route{
-		gors.NewRoute(
-			http.MethodPost,
-			"/v1/Method",
-			func(c *gin.Context) {
-				var rpcMethodName = "/protoservice.ProtoService/Method"
-				var ctx = gors.NewContext(c, rpcMethodName)
-				var req *HelloRequest
-				var resp *HelloReply
-				var err error
-				req = new(HelloRequest)
-				if err = gors.RequestBind(
-					ctx, req, options.Tag,
-					gors.ProtoJSONBinding,
-				); err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				if ctx, err = gors.NewGRPCContext(ctx, options.IncomingHeaderMatcher, options.MetadataAnnotators); err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				var headerMD, trailerMD metadata.MD
-				resp, err = cli.Method(ctx, req, grpc.Header(&headerMD), grpc.Trailer(&trailerMD))
-				gors.AddGRPCMetadata(ctx, headerMD, trailerMD, options.OutgoingHeaderMatcher)
-				if err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				gors.ResponseRender(ctx, gors.StatusCode(ctx), resp, "", gors.ProtoJSONRender, options.ResponseWrapper)
-			},
-		),
-	}
+func (m *MockUserService) CreateUser(ctx context.Context, req *CreateUserRequest) (*CreateUserResponse, error) {
+	return &CreateUserResponse{Item: &UserItem{Id: 1, Name: req.Name}}, nil
 }
 
-func ProtoServiceServerRoutes(srv ProtoServiceServer, opts ...gors.Option) []gors.Route {
-	options := gors.New(opts...)
-	_ = options
-	if len(options.Tag) == 0 {
-		options.Tag = "json"
-	}
-	return []gors.Route{
-		gors.NewRoute(
-			http.MethodPost,
-			"/v1/Method",
-			func(c *gin.Context) {
-				var rpcMethodName = "/protoservice.ProtoService/Method"
-				var ctx = gors.NewContext(c, rpcMethodName)
-				var req *HelloRequest
-				var resp *HelloReply
-				var err error
-				req = new(HelloRequest)
-				if err = gors.RequestBind(
-					ctx, req, options.Tag,
-					gors.ProtoJSONBinding,
-				); err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				if ctx, err = gors.NewGRPCContext(ctx, options.IncomingHeaderMatcher, options.MetadataAnnotators); err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				stream := gors.NewServerTransportStream(rpcMethodName)
-				ctx = grpc.NewContextWithServerTransportStream(ctx, stream)
-				resp, err = srv.Method(ctx, req)
-				gors.AddGRPCMetadata(ctx, stream.Header(), stream.Trailer(), options.OutgoingHeaderMatcher)
-				if err != nil {
-					gors.ErrorRender(ctx, err, options.ErrorHandler, options.ResponseWrapper)
-					return
-				}
-				gors.ResponseRender(ctx, gors.StatusCode(ctx), resp, "", gors.ProtoJSONRender, options.ResponseWrapper)
-			},
-		),
-	}
+func (m *MockUserService) DeleteUser(ctx context.Context, req *DeleteUserRequest) (*DeleteUserResponse, error) {
+	return &DeleteUserResponse{Id: req.GetId()}, nil
 }
 
+func (m *MockUserService) ModifyUser(ctx context.Context, req *ModifyUserRequest) (*ModifyUserResponse, error) {
+	return &ModifyUserResponse{Id: req.GetId(), Name: req.GetName()}, nil
+}
+
+func (m *MockUserService) UpdateUser(ctx context.Context, req *UpdateUserRequest) (*UpdateUserResponse, error) {
+	return &UpdateUserResponse{Id: req.GetId(), Item: &UserItem{Id: req.GetItem().GetId(), Name: req.GetItem().GetName()}}, nil
+}
+
+func (m *MockUserService) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
+	return &GetUserResponse{Item: &UserItem{Id: req.Id, Name: "test"}}, nil
+}
+
+func (m *MockUserService) ListUser(ctx context.Context, req *ListUserRequest) (*ListUserResponse, error) {
+	return &ListUserResponse{
+		PageNum:  req.GetPageNum(),
+		PageSize: req.GetPageSize(),
+		List: []*UserItem{
+			{Id: 1, Name: "a"},
+			{Id: 2, Name: "b"},
+		},
+	}, nil
+}
 ```
 
-
-## 4. 实现服务
-
-通过Interface定义接口:
+# 创建Server
 ```go
-var _ demo.Service = new(Service)
-
-type Service struct {}
-
-func (svc *Service) Method(ctx context.Context, req *demo.MethodReq) (*demo.MethodResp, error) {
-	fmt.Println(req.ID)
-	return &demo.MethodResp{V: 10}, nil
-}
-```
-通过grpc定义接口：
-```go
-package svc
-
-import (
-	"context"
-	"github.com/go-leo/gors/example/api/protoservice"
-)
-
-var _ protoservice.ProtoServiceServer = new(ProtoService)
-
-type ProtoService struct {
-	protoservice.UnimplementedProtoServiceServer
-}
-
-func (p ProtoService) Method(ctx context.Context, request *protoservice.HelloRequest) (*protoservice.HelloReply, error) {
-	return &protoservice.HelloReply{Message: "hi " + request.GetName()}, nil
-}
-
-
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router = user.AppendUserGonicRoute(router, &MockUserService{})
+	server := http.Server{Addr: ":8000", Handler: router}
+	server.ListenAndServe()
 ```
 
-## 5. 启动服务
-通过Interface定义接口:
-```go
-package main
+更多示例见 [example](https://github.com/go-leo/gonic/tree/example/user/server)
 
-import (
-	"net"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
-
-	"github.com/go-leo/gors"
-	"github.com/go-leo/gors/example/api/demo"
-	"github.com/go-leo/gors/example/internal/app/api/svc"
-)
-
-func main() {
-	engine := gin.New()
-	engine = gors.AppendRoutes(engine, demo.ServiceRoutes(new(svc.Service))...)
-	srv := http.Server{Handler: engine}
-	listen, err := net.Listen("tcp", ":8088")
-	if err != nil {
-		panic(err)
-	}
-	err = srv.Serve(listen)
-	if err != nil {
-		panic(err)
-	}
-}
-```
-通过grpc定义接口有通过client和server两种启动方式
-
-server方式：
-```go
-package main
-
-import (
-	"github.com/go-leo/gors/example/api/protodemo"
-	"github.com/go-leo/gors/example/internal/app/api/svc"
-	"net"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
-
-	"github.com/go-leo/gors"
-)
-
-func main() {
-	engine := gin.New()
-	engine = gors.AppendRoutes(engine, protodemo.ProtoDemoServerRoutes(new(svc.HelloWorldService))...)
-	srv := http.Server{Handler: engine}
-	listen, err := net.Listen("tcp", ":8088")
-	if err != nil {
-		panic(err)
-	}
-	err = srv.Serve(listen)
-	if err != nil {
-		panic(err)
-	}
-}
-```
-
-client方式：
-```go
-package main
-
-import (
-	"github.com/go-leo/gors/example/api/protodemo"
-	"github.com/go-leo/gors/example/internal/app/api/svc"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"net"
-	"net/http"
-	"time"
-
-	"github.com/gin-gonic/gin"
-
-	"github.com/go-leo/gors"
-)
-
-func main() {
-	go func() {
-		server := grpc.NewServer()
-		protodemo.RegisterProtoDemoServer(server, new(svc.ProtoDemoServer))
-		listen, err := net.Listen("tcp", ":9090")
-		if err != nil {
-			panic(err)
-		}
-		err = server.Serve(listen)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	time.Sleep(time.Second)
-	dial, err := grpc.Dial(":9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		panic(err)
-	}
-	client := protodemo.NewProtoDemoClient(dial)
-
-	engine := gin.New()
-	engine = gors.AppendRoutes(engine, protodemo.ProtoDemoClientRoutes(client)...)
-	srv := http.Server{Handler: engine}
-	listen, err := net.Listen("tcp", ":8088")
-	if err != nil {
-		panic(err)
-	}
-	err = srv.Serve(listen)
-	if err != nil {
-		panic(err)
-	}
-}
-
-```
-
-
-
-## 注意
-通过Interface定义接口, 请求和响应参数需要满足一下：
-* 参数一：第一个参数必须是`context.Context`,其他类型都会生成失败。
-* 参数二： 第二个参数有四种类型：`io.Reader`、`[]byte`、`string`和`结构体指针`,其他类型都会生成失败。
-    - `io.Reader`，直接取`http.Request`里的`Body`。只能支持`@ReaderBinding`。
-    - `[]byte`，将`http.Request`里的`Body`以字节数组形式全部读出。只能支持`@BytesBinding`。
-    - `string`，将`http.Request`里的`Body`以字符串形式全部读出。只能支持`@StringBinding`。
-    - `结构体指针`，支持除以上三种以外的所有Binding，将path、query、header和body中的参数，绑定到内部字段里。
-* 响应一：第一个响应参数有四种类型：`string`、`[]byte`、`io.Reader`和`结构体指针`,其他类型都会生成失败。
-    - `io.Reader`，将`io.Reader`写入响应的Body中，必须要配合`@ReaderRender`注解使用，可以自定义响应`Content-Type`，比如`@ReaderRender(video/mpeg4)`
-    - `[]byte`，将`[]byte`写入响应的Body中，必须要配合`@BytesRender`注解使用，可以自定义响应`Content-Type`，比如`@BytesRender(image/png)`
-    - `string`,可以配合不同的Render策略进行响应。
-      * `@TextRender`, 将文本以`Content-Type`为`"text/plain; charset=utf-8"`写入响应的Body中。
-      * `@HTMLRender`, 将文本以`Content-Type`为`"text/html; charset=utf-8"`写入响应的Body中。
-      * `@StringRender`, 将文本写入响应的Body中，可以自定义响应`Content-Type`，比如`@StringRender(text/xml)`
-      * `@RedirectRender`, 重定向渲染，重定向到文本指定的位置。
-    - `结构体指针`，需要配合各自Render策略，将结构体指针序列化成`[]byte`后,写入响应的Body中。
-* 响应二：第一个请求参数必须是`error`,其他类型都会生成失败。
-
-# 注解大全
-## @GORS
-必须设置, 基础注解。
-代表gors的注解配置的开始，没有`@GORS`开始的都会被忽略。
-
-## @Path
-必须设置，路径注解。
-- 可以设置参数，`@Path(/api)`
-- 如果设置在接口名上，代表为所有path定义基础的path。
-- 如果设置在方法上，代表为此方法定义path。
-- 可以设置多个`@Path`注解，此时多个path会被拼接成一个。
-
-## HTTP Method注解
-必须设置，设置此方法的只能响应指定的Method请求。 Method只能有一个有效，如果设置多个，只有最后一个有效。支持标准库里定义的9种method：
-### @GET
->此注解设置此方法为Get请求。
-### @HEAD
->此注解设置此方法为Head请求。
-### @POST
->此注解设置此方法为Post请求。
-### @PUT
->此注解设置此方法为Put请求。
-### @PATCH
-此注解设置此方法为Patch请求。
-### @DELETE
->此注解设置此方法为Delete请求。
-### @CONNECT
->此注解设置此方法为Connect请求。
-### @OPTIONS
->此注解设置此方法为Options请求。
-### @TRACE
->此注解设置此方法为Trace请求。
-
-## Binding 注解
-数据绑定注解。
-- 当第二个参数是结构体指针时候，可以设置。
-- 可以设置多种Binding策略。
-### @ReaderBinding
-> 配合第二个参数是`io.Reader`类型使用，引用`request.Body`，可以设置`Content-Type`值，比如`@ReaderBinding(image/jpeg)`
->* grpc定义形式不支持
-### @BytesBinding
-> 配合第二个参数是`[]byte`类型使用，将`request.Body`以字节形式全部读出，可以设置`Content-Type`值，比如`@ReaderBinding(image/jpeg)`
->* grpc定义形式不支持
-### @StringBinding
-> 配合第二个参数是`string`类型使用，将`request.Body`以字节形式全部读出,并转成字符串，可以设置`Content-Type`值，比如`@ReaderBinding(application/javascript)`
->* grpc定义形式不支持
-### @UriBinding
->将对应的Uri参数绑定到结构体指针中。
->接口定义形式，默认的tag是uri,支持[gin的路径参数语法](https://github.com/gin-gonic/gin#parameters-in-path)和[gin的uri绑定策略](https://github.com/gin-gonic/gin#bind-uri)
->* grpc定义形式，默认的tag是json
-### @QueryBinding
->将对应的Query参数绑定到结构体指针中。
->* 接口定义形式，默认的tag是form, 支持[gin的只绑定Query策略](https://github.com/gin-gonic/gin#only-bind-query-string)。
->* grpc定义形式，默认的tag是json
-
-### @HeaderBinding
->将对应的Header参数绑定到结构体指针中。
->
->* 接口定义形式，默认的tag是header, 支持[gin的header绑定策略](https://github.com/gin-gonic/gin#bind-header)
->* grpc定义形式，默认的tag是json
- 
-### @JSONBinding
->将请求的Body以JSON形式解析出来,并绑定到结构体指针中。
->* 接口定义形式，默认的tag是json
->* grpc定义形式，默认的tag是json
-
-### @FormBinding
->将请求的**Query和Body**同时以Form形式解析出来,并绑定到结构体指针中。
->* 接口定义形式，默认的tag是json,支持[gin的form绑定策略](https://github.com/gin-gonic/gin#multiparturlencoded-binding)
->* grpc定义形式，默认的tag是json
-
-### @FormPostBinding
->将请求的**Body**以FormPost形式解析出来,并绑定到结构体指针中。
->* 接口定义形式，默认的tag是json,支持[gin的urlencoded绑定策略](https://github.com/gin-gonic/gin#multiparturlencoded-binding)
->* grpc定义形式，默认的tag是json
-
-### @FormMultipartBinding
->将请求的Body以Multipart形式解析出来并绑定到结构体指针中。
->* 接口定义形式，默认的tag是json,支持文件上传,支持[gin的Multipart绑定策略](https://github.com/gin-gonic/gin#multiparturlencoded-binding)
->* grpc定义形式不支持
-
-### @ProtoBufBinding
->将请求的Body以protobuf形式解析出来并绑定到结构体指针中。
->* 接口定义形式，默认的tag是protobuf
->* grpc定义形式，默认的tag是protobuf
-
-### @ProtoJSONBinding
->将请求的Body以protojson形式解析出来并绑定到结构体指针中。
->* 接口定义形式，默认的tag是json
->* grpc定义形式，默认的tag是json
-
-### @MsgPackBinding
->将请求的Body以msgpack形式解析出来并绑定到结构体指针中。
->* 接口定义形式，默认的tag是codec
->* grpc定义形式，默认的tag是codec
-
-### @XMLBinding
->将请求的Body以XML形式解析出来,并绑定到结构体指针中。
->* 接口定义形式，默认的tag是xml
->* grpc定义形式，默认的tag是xml
-
-### @YAMLBinding
->将请求的Body以YAML形式解析出来并绑定到结构体指针中。
->* 接口定义形式，默认的tag是yaml
->* grpc定义形式，默认的tag是yaml
-
-### @TOMLBinding
->将请求的Body以TOML形式解析出来并绑定到结构体指针中。
->* 接口定义形式，默认的tag是toml
->* grpc定义形式，默认的tag是toml
-
-### @CustomBinding
->预定义的Binding策略不能满足需求，需要使用自定义Binding策略，请求结构体需要实现gors.Binding接口。
-
-## Render 注解
-响应渲染注解。
-- 方法的一个返回参数的类型不通，相对应的渲染也不同。
-- 只能设置一种渲染策略。
-### @BytesRender
->字节数组渲染。
->
->只有当方法的第一个返回参数类型为`[]byte`时才能使用，`@BytesRender`将数据以字节数组写入响应的Body中，可以自定义响应`Content-Type`，比如：`@BytesRender(image/png)`代表渲染一张图片。
->* grpc定义形式不支持
-
-### @StringRender
->字符串渲染。
->
->只有当方法的第一个返回参数类型为`string`时才能使用，`@StringRender`将数据以文本的方式写入响应的Body中，可以自定义响应`Content-Type`，比如`@StringRender(image/xml)`代表渲染xml文件。
->* grpc定义形式不支持
-
-### @TextRender
->文本渲染。
->
->只有当方法的第一个返回参数类型为`string`时才能使用，`@TextRender`将数据以文本的方式写入响应的Body中，`Content-Type`固定为`text/plain; charset=utf-8`
->* grpc定义形式不支持
-
-### @HTMLRender
->HTML渲染。
->
->只有当方法的第一个返回参数类型为`string`时才能使用，`@HTMLRender`将数据以文本的方式写入响应的Body中，`Content-Type`固定为`text/html; charset=utf-8`
->* grpc定义形式不支持
-
-### @RedirectRender
->重定向渲染。
->
->只有当方法的第一个返回参数类型为`string`时才能使用,此参数应该是个可以重定向的地址位置。
->* grpc定义形式不支持
-
-### @ReaderRender
->数据流渲染，只有当方法的第一个返回参数类型为`io.Reader`时才能使用，`@ReaderRender`将数据流写入响应的Body中，可以自定义响应`Content-Type`，比如：`@ReaderRender(video/mpeg4)`代表渲染一个视频文件。
->* grpc定义形式不支持
-
-### @JSONRender
->JSON渲染。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@JSONRender`将结构体指针以JSON格式序列化并且写入响应的Body中，`Content-Type`固定为`application/json; charset=utf-8`。参考[gin文档-json](https://github.com/gin-gonic/gin#xml-json-yaml-toml-and-protobuf-rendering)
-
-### @IndentedJSONRender
->漂亮的JSON渲染，在JSON渲染的基础上，加上了缩进和结束行。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@IndentedJSONRender`将结构体指针以JSON格式序列化并且写入响应的Body中，`Content-Type`固定为`application/json; charset=utf-8`。比较耗资源。
-
-### @SecureJSONRender
->安全的的JSON渲染，防止一些代码注入。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@SecureJSONRender`将结构体指针以JSON格式序列化并且写入响应的Body中，`Content-Type`固定为`application/json; charset=utf-8`。[gin文档-SecureJSON](https://github.com/gin-gonic/gin#securejson)
-
-### @JsonpJSONRender
->jsonp方式渲染，jsonp可以跨域请求，如果查询参数callback存在，则将callback添加到响应体中。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用。参考[gin文档-jsonp](https://github.com/gin-gonic/gin#jsonp)
->* grpc定义形式不支持
-
-### @PureJSONRender
->纯净的JSON渲染，普通的JSON渲染，会将一些html特殊字符会被转义，比如`<`转成`\u003c`。`@PureJSONRender`则不会转义。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@PureJSONRender`将结构体指针以JSON格式序列化并且写入响应的Body中，`Content-Type`固定为`application/json; charset=utf-8`。[gin文档-PureJSON](https://github.com/gin-gonic/gin#purejson)
-
-### @AsciiJSONRender
->AsciiJSON渲染，只渲染Ascii字符，非Ascii字符则会被转义。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@AsciiJSONRender`将结构体指针以JSON格式序列化并且写入响应的Body中，`Content-Type`固定为`application/json; charset=utf-8`。[gin文档-AsciiJSON](https://github.com/gin-gonic/gin#asciijson)
-
-### @ProtoJSONRender
->ProtoJSON渲染，对protobuf已Json形式渲染
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@ProtoJSONRender`将结构体指针以JSON格式序列化并且写入响应的Body中，`Content-Type`固定为`application/json; charset=utf-8`。
-
-### @XMLRender
->XML渲染。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@XMLRender`将结构体指针以XML格式序列化并且写入响应的Body中，`Content-Type`固定为`application/xml; charset=utf-8`。参考[gin文档-XMLRender](https://github.com/gin-gonic/gin#xml-json-yaml-toml-and-protobuf-rendering)
-
-### @YAMLRender
->YAML渲染。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@YAMLRender`将结构体指针以YAML格式序列化并且写入响应的Body中，`Content-Type`固定为`application/x-yaml; charset=utf-8`。参考[gin文档-YAMLRender](https://github.com/gin-gonic/gin#xml-json-yaml-toml-and-protobuf-rendering)
-
-### @ProtoBufRender
->ProtoBuf渲染。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@ProtoBufRender`将结构体指针以Protocol Buffer格式序列化并且写入响应的Body中，`Content-Type`固定为`application/x-protobuf`。参考[gin文档-ProtoBufRender](https://github.com/gin-gonic/gin#xml-json-yaml-toml-and-protobuf-rendering)
-
-### @MsgPackRender
->MsgPack渲染。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@MsgPackRender`将结构体指针以MsgPack格式序列化并且写入响应的Body中，`Content-Type`固定为`application/msgpack; charset=utf-8`。
-
-### @TOMLRender
->TOML渲染。
->
->只有当方法的第一个返回参数类型为`结构体指针`时才能使用，`@TOMLRender`将结构体指针以TOML格式序列化并且写入响应的Body中，`Content-Type`固定为`application/toml`。参考[gin文档-TOMLRender](https://github.com/gin-gonic/gin#xml-json-yaml-toml-and-protobuf-rendering)
-
-### @CustomRender
->预定义的Render策略不能满足需求，需要使用自定义Render策略，响应结构体需要实现gors.Render接口。
-
-# Validate
-除了gin框架支持的参数校验方案外，gors也提供了另外一种参数校验方式，方法的第一个返回参数类型为`结构体指针`,并且实现了Validator接口，则在数据绑定后，会对数据进行校验。
-## Validator接口
-```go
-type Validator interface {
-	Validate() error
-}
-```
+# 子妹项目
+* [github.com/go-leo/gorilla](https://github.com/go-leo/gorilla) 使用 gorilla/mux 管理路由。
+* [github.com/go-leo/goose](https://github.com/go-leo/goose) 使用 Go 1.22 HTTP Router 管理路由。
